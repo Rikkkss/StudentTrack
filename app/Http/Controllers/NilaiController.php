@@ -1,6 +1,10 @@
 <?php
 
+
+
 namespace App\Http\Controllers;
+
+
 
 use App\Models\Nilai;
 
@@ -18,6 +22,8 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 use FPDF;
 
+
+
 class NilaiController extends Controller
 
 {
@@ -32,6 +38,8 @@ class NilaiController extends Controller
 
     */
 
+
+
     public function index(Request $request)
 
     {
@@ -39,6 +47,8 @@ class NilaiController extends Controller
         $sort = $request->get('sort', 'created_at');
 
         $direction = $request->get('direction', 'desc');
+
+
 
         $allowedSorts = [
 
@@ -52,11 +62,15 @@ class NilaiController extends Controller
 
         ];
 
+
+
         if (!in_array($sort, $allowedSorts)) {
 
             $sort = 'created_at';
 
         }
+
+
 
         if (!in_array($direction, ['asc', 'desc'])) {
 
@@ -64,7 +78,11 @@ class NilaiController extends Controller
 
         }
 
+
+
         $query = Nilai::with('mataKuliah');
+
+
 
         if ($sort === 'mata_kuliah') {
 
@@ -90,13 +108,21 @@ class NilaiController extends Controller
 
         }
 
+
+
         $nilai = $query->paginate(10)->withQueryString();
 
+
+
         $rataRata = Nilai::avg('nilai');
+
+
 
         $totalMataKuliah = Nilai::distinct('mata_kuliah_id')
 
             ->count('mata_kuliah_id');
+
+
 
         $daftarSemester = MataKuliah::select('semester')
 
@@ -105,6 +131,8 @@ class NilaiController extends Controller
             ->orderBy('semester')
 
             ->pluck('semester');
+
+
 
         return view('nilai.index', compact(
 
@@ -124,6 +152,8 @@ class NilaiController extends Controller
 
     }
 
+
+
     /*
 
     |--------------------------------------------------------------------------
@@ -134,15 +164,21 @@ class NilaiController extends Controller
 
     */
 
+
+
     public function create()
 
     {
 
         $mataKuliah = MataKuliah::orderBy('nama')->get();
 
+
+
         return view('nilai.create', compact('mataKuliah'));
 
     }
+
+
 
     public function store(Request $request)
 
@@ -160,7 +196,11 @@ class NilaiController extends Controller
 
         ]);
 
+
+
         $data['keterangan'] = $data['keterangan'] ?: null;
+
+
 
         if ($this->isDuplicate($data)) {
 
@@ -172,7 +212,11 @@ class NilaiController extends Controller
 
         }
 
+
+
         Nilai::create($data);
+
+
 
         return redirect()->route('nilai.index')
 
@@ -180,15 +224,21 @@ class NilaiController extends Controller
 
     }
 
+
+
     public function edit(Nilai $nilai)
 
     {
 
         $mataKuliah = MataKuliah::orderBy('nama')->get();
 
+
+
         return view('nilai.edit', compact('nilai', 'mataKuliah'));
 
     }
+
+
 
     public function update(Request $request, Nilai $nilai)
 
@@ -206,7 +256,11 @@ class NilaiController extends Controller
 
         ]);
 
+
+
         $data['keterangan'] = $data['keterangan'] ?: null;
+
+
 
         if ($this->isDuplicate($data, $nilai->id)) {
 
@@ -218,7 +272,11 @@ class NilaiController extends Controller
 
         }
 
+
+
         $nilai->update($data);
+
+
 
         return redirect()->route('nilai.index')
 
@@ -226,17 +284,23 @@ class NilaiController extends Controller
 
     }
 
+
+
     public function destroy(Nilai $nilai)
 
     {
 
         $nilai->delete();
 
+
+
         return redirect()->route('nilai.index')
 
             ->with('success', 'Nilai berhasil dihapus.');
 
     }
+
+
 
     private function isDuplicate(array $data, ?int $exceptId = null): bool
 
@@ -248,6 +312,8 @@ class NilaiController extends Controller
 
             ->where('nilai', $data['nilai']);
 
+
+
         if ($data['keterangan'] === null) {
 
             $query->whereNull('keterangan');
@@ -258,15 +324,21 @@ class NilaiController extends Controller
 
         }
 
+
+
         if ($exceptId !== null) {
 
             $query->where('id', '!=', $exceptId);
 
         }
 
+
+
         return $query->exists();
 
     }
+
+
 
     /*
 
@@ -278,6 +350,8 @@ class NilaiController extends Controller
 
     */
 
+
+
     public function export()
 
     {
@@ -288,11 +362,15 @@ class NilaiController extends Controller
 
             ->get();
 
+
+
         $spreadsheet = new Spreadsheet();
 
         $sheet = $spreadsheet->getActiveSheet();
 
         $sheet->setTitle('Data Nilai');
+
+
 
         $sheet->fromArray([
 
@@ -300,7 +378,11 @@ class NilaiController extends Controller
 
         ], null, 'A1');
 
+
+
         $row = 2;
+
+
 
         foreach ($data as $item) {
 
@@ -318,17 +400,25 @@ class NilaiController extends Controller
 
             ]], null, 'A' . $row);
 
+
+
             $row++;
 
         }
 
+
+
         $sheet->getStyle('A1:E1')->getFont()->setBold(true);
+
+
 
         foreach (range('A', 'E') as $column) {
 
             $sheet->getColumnDimension($column)->setAutoSize(true);
 
         }
+
+
 
         $info = $spreadsheet->createSheet();
 
@@ -342,9 +432,15 @@ class NilaiController extends Controller
 
         $info->setCellValue('B2', $data->count());
 
+
+
         $filename = 'StudentTrack_Nilai_' . now()->format('Ymd_His') . '.xlsx';
 
+
+
         $writer = new Xlsx($spreadsheet);
+
+
 
         return response()->streamDownload(function () use ($writer) {
 
@@ -360,6 +456,8 @@ class NilaiController extends Controller
 
     }
 
+
+
     /*
 
     |--------------------------------------------------------------------------
@@ -369,6 +467,8 @@ class NilaiController extends Controller
     |--------------------------------------------------------------------------
 
     */
+
+
 
     public function import(Request $request)
 
@@ -380,6 +480,8 @@ class NilaiController extends Controller
 
         ]);
 
+
+
         try {
 
             $spreadsheet = IOFactory::load(
@@ -388,17 +490,25 @@ class NilaiController extends Controller
 
             );
 
+
+
             $sheet = $spreadsheet->getSheetByName('Data Nilai')
 
                 ?? $spreadsheet->getActiveSheet();
 
+
+
             $rows = $sheet->toArray();
+
+
 
             $berhasil = 0;
 
             $duplikat = 0;
 
             $gagal = 0;
+
+
 
             foreach (array_slice($rows, 1) as $row) {
 
@@ -410,13 +520,19 @@ class NilaiController extends Controller
 
                 $keterangan = trim((string) ($row[4] ?? ''));
 
+
+
                 if ($kode === '' && $jenis === '' && $nilai === null) {
 
                     continue;
 
                 }
 
+
+
                 $mataKuliah = MataKuliah::where('kode', $kode)->first();
+
+
 
                 $validator = Validator::make([
 
@@ -432,6 +548,8 @@ class NilaiController extends Controller
 
                 ]);
 
+
+
                 if (!$mataKuliah || $validator->fails()) {
 
                     $gagal++;
@@ -439,6 +557,8 @@ class NilaiController extends Controller
                     continue;
 
                 }
+
+
 
                 $data = [
 
@@ -452,6 +572,8 @@ class NilaiController extends Controller
 
                 ];
 
+
+
                 if ($this->isDuplicate($data)) {
 
                     $duplikat++;
@@ -460,11 +582,15 @@ class NilaiController extends Controller
 
                 }
 
+
+
                 Nilai::create($data);
 
                 $berhasil++;
 
             }
+
+
 
             return redirect()->route('nilai.index')->with(
 
@@ -473,6 +599,8 @@ class NilaiController extends Controller
                 "Import selesai. Berhasil: {$berhasil}, duplikat: {$duplikat}, tidak valid: {$gagal}."
 
             );
+
+
 
         } catch (\Throwable $e) {
 
@@ -486,6 +614,8 @@ class NilaiController extends Controller
 
     }
 
+
+
     /*
 
     |--------------------------------------------------------------------------
@@ -496,6 +626,8 @@ class NilaiController extends Controller
 
     */
 
+
+
     private function normalisasiKomponen(string $jenis): ?string
 
     {
@@ -503,6 +635,8 @@ class NilaiController extends Controller
         $jenis = strtolower(trim($jenis));
 
         $jenis = preg_replace('/\s+/', ' ', $jenis);
+
+
 
         $komponen = [
 
@@ -518,6 +652,8 @@ class NilaiController extends Controller
 
             ],
 
+
+
             'tugas' => [
 
                 'tugas',
@@ -525,6 +661,8 @@ class NilaiController extends Controller
                 'assignment',
 
             ],
+
+
 
             'uts' => [
 
@@ -534,6 +672,8 @@ class NilaiController extends Controller
 
             ],
 
+
+
             'uas' => [
 
                 'uas',
@@ -541,6 +681,8 @@ class NilaiController extends Controller
                 'ujian akhir semester',
 
             ],
+
+
 
             'keaktifan' => [
 
@@ -552,6 +694,8 @@ class NilaiController extends Controller
 
             ],
 
+
+
             'quiz' => [
 
                 'quiz',
@@ -561,6 +705,8 @@ class NilaiController extends Controller
             ],
 
         ];
+
+
 
         foreach ($komponen as $nama => $alias) {
 
@@ -572,9 +718,13 @@ class NilaiController extends Controller
 
         }
 
+
+
         return null;
 
     }
+
+
 
     /*
 
@@ -585,6 +735,8 @@ class NilaiController extends Controller
     |--------------------------------------------------------------------------
 
     */
+
+
 
     private function bobotKomponen(): array
 
@@ -608,6 +760,8 @@ class NilaiController extends Controller
 
     }
 
+
+
     /*
 
     |--------------------------------------------------------------------------
@@ -617,6 +771,8 @@ class NilaiController extends Controller
     |--------------------------------------------------------------------------
 
     */
+
+
 
     private function konversiNilai(float $nilai): array
 
@@ -628,11 +784,15 @@ class NilaiController extends Controller
 
         }
 
+
+
         if ($nilai >= 80) {
 
             return ['AB', 3.50];
 
         }
+
+
 
         if ($nilai >= 75) {
 
@@ -640,11 +800,15 @@ class NilaiController extends Controller
 
         }
 
+
+
         if ($nilai >= 70) {
 
             return ['BC', 2.50];
 
         }
+
+
 
         if ($nilai >= 60) {
 
@@ -652,15 +816,21 @@ class NilaiController extends Controller
 
         }
 
+
+
         if ($nilai >= 50) {
 
             return ['D', 1.00];
 
         }
 
+
+
         return ['E', 0.00];
 
     }
+
+
 
     /*
 
@@ -672,17 +842,23 @@ class NilaiController extends Controller
 
     */
 
+
+
     private function dataAkademik(?int $semester = null): array
 
     {
 
         $query = MataKuliah::with('nilai');
 
+
+
         if ($semester !== null) {
 
             $query->where('semester', $semester);
 
         }
+
+
 
         $mataKuliah = $query
 
@@ -692,9 +868,15 @@ class NilaiController extends Controller
 
             ->get();
 
+
+
         $bobotKomponen = $this->bobotKomponen();
 
+
+
         $hasil = [];
+
+
 
         foreach ($mataKuliah as $mk) {
 
@@ -706,6 +888,8 @@ class NilaiController extends Controller
 
             );
 
+
+
             foreach ($mk->nilai as $item) {
 
                 $namaKomponen = $this->normalisasiKomponen(
@@ -713,6 +897,8 @@ class NilaiController extends Controller
                     $item->jenis_penilaian
 
                 );
+
+
 
                 if ($namaKomponen !== null) {
 
@@ -722,9 +908,13 @@ class NilaiController extends Controller
 
             }
 
+
+
             // Menghitung rata-rata setiap komponen.
 
             $rataKomponen = [];
+
+
 
             foreach ($komponen as $nama => $daftarNilai) {
 
@@ -736,45 +926,32 @@ class NilaiController extends Controller
 
             }
 
+
+
             // Hitung nilai akhir dari komponen yang tersedia saja.
-
             // Bobot komponen yang tersedia dinormalisasi agar totalnya menjadi 100%.
-
             $totalBobotTersedia = 0.0;
-
             $totalNilaiTertimbang = 0.0;
 
             foreach ($bobotKomponen as $nama => $persentase) {
-
                 if ($rataKomponen[$nama] !== null) {
-
                     $totalNilaiTertimbang +=
-
                         $rataKomponen[$nama] * $persentase;
-
                     $totalBobotTersedia += $persentase;
-
                 }
-
             }
 
             // Minimal satu komponen nilai harus tersedia agar dapat dihitung.
-
             $adaNilai = $totalBobotTersedia > 0;
-
             $nilaiAkhir = null;
-
             $huruf = '-';
-
             $bobot = null;
 
             if ($adaNilai) {
-
                 $nilaiAkhir = $totalNilaiTertimbang / $totalBobotTersedia;
-
                 [$huruf, $bobot] = $this->konversiNilai($nilaiAkhir);
-
             }
+
 
             $hasil[] = [
 
@@ -802,9 +979,13 @@ class NilaiController extends Controller
 
         }
 
+
+
         return $hasil;
 
     }
+
+
 
     /*
 
@@ -816,6 +997,8 @@ class NilaiController extends Controller
 
     */
 
+
+
     private function hitungIndeks(array $data): array
 
     {
@@ -826,9 +1009,13 @@ class NilaiController extends Controller
 
         $totalSksSemua = 0;
 
+
+
         foreach ($data as $item) {
 
             $totalSksSemua += $item['sks'];
+
+
 
             if ($item['lengkap']) {
 
@@ -840,6 +1027,8 @@ class NilaiController extends Controller
 
         }
 
+
+
         return [
 
             'ips' => $totalSks > 0
@@ -847,6 +1036,8 @@ class NilaiController extends Controller
                 ? $totalMutu / $totalSks
 
                 : 0,
+
+
 
             'sks_dihitung' => $totalSks,
 
@@ -858,6 +1049,8 @@ class NilaiController extends Controller
 
     }
 
+
+
     /*
 
     |--------------------------------------------------------------------------
@@ -868,11 +1061,15 @@ class NilaiController extends Controller
 
     */
 
+
+
     public function downloadKhs($semester)
 
     {
 
         $semester = (int) $semester;
+
+
 
         if ($semester < 1 || $semester > 20) {
 
@@ -880,7 +1077,11 @@ class NilaiController extends Controller
 
         }
 
+
+
         $data = $this->dataAkademik($semester);
+
+
 
         if (count($data) === 0) {
 
@@ -896,13 +1097,19 @@ class NilaiController extends Controller
 
         }
 
+
+
         $indeks = $this->hitungIndeks($data);
+
+
 
         $pdf = new FPDF('L', 'mm', 'A4');
 
         $pdf->AddPage();
 
         $pdf->SetAutoPageBreak(true, 15);
+
+
 
         $this->headerPdf(
 
@@ -914,7 +1121,11 @@ class NilaiController extends Controller
 
         );
 
+
+
         $this->tabelNilai($pdf, $data);
+
+
 
         $pdf->Ln(5);
 
@@ -922,7 +1133,11 @@ class NilaiController extends Controller
 
         $pdf->Cell(0, 8, 'RINGKASAN HASIL STUDI', 0, 1);
 
+
+
         $pdf->SetFont('Arial', '', 10);
+
+
 
         $pdf->Cell(
 
@@ -938,6 +1153,8 @@ class NilaiController extends Controller
 
         );
 
+
+
         $pdf->Cell(
 
             70,
@@ -951,6 +1168,8 @@ class NilaiController extends Controller
             0
 
         );
+
+
 
         $pdf->Cell(
 
@@ -966,9 +1185,13 @@ class NilaiController extends Controller
 
         );
 
+
+
         $pdf->Ln(5);
 
         $pdf->SetFont('Arial', 'I', 8);
+
+
 
         $pdf->MultiCell(
 
@@ -984,6 +1207,8 @@ class NilaiController extends Controller
 
         );
 
+
+
         return $this->kirimPdf(
 
             $pdf,
@@ -993,6 +1218,8 @@ class NilaiController extends Controller
         );
 
     }
+
+
 
     /*
 
@@ -1004,11 +1231,15 @@ class NilaiController extends Controller
 
     */
 
+
+
     public function downloadTranskrip()
 
     {
 
         $data = $this->dataAkademik();
+
+
 
         if (count($data) === 0) {
 
@@ -1018,13 +1249,19 @@ class NilaiController extends Controller
 
         }
 
+
+
         $indeks = $this->hitungIndeks($data);
+
+
 
         $pdf = new FPDF('L', 'mm', 'A4');
 
         $pdf->AddPage();
 
         $pdf->SetAutoPageBreak(true, 15);
+
+
 
         $this->headerPdf(
 
@@ -1036,7 +1273,11 @@ class NilaiController extends Controller
 
         );
 
+
+
         $this->tabelNilai($pdf, $data);
+
+
 
         $pdf->Ln(5);
 
@@ -1044,7 +1285,11 @@ class NilaiController extends Controller
 
         $pdf->Cell(0, 8, 'RINGKASAN TRANSKRIP', 0, 1);
 
+
+
         $pdf->SetFont('Arial', '', 10);
+
+
 
         $pdf->Cell(
 
@@ -1060,6 +1305,8 @@ class NilaiController extends Controller
 
         );
 
+
+
         $pdf->Cell(
 
             70,
@@ -1073,6 +1320,8 @@ class NilaiController extends Controller
             0
 
         );
+
+
 
         $pdf->Cell(
 
@@ -1088,9 +1337,13 @@ class NilaiController extends Controller
 
         );
 
+
+
         $pdf->Ln(5);
 
         $pdf->SetFont('Arial', 'I', 8);
+
+
 
         $pdf->MultiCell(
 
@@ -1106,6 +1359,8 @@ class NilaiController extends Controller
 
         );
 
+
+
         return $this->kirimPdf(
 
             $pdf,
@@ -1116,6 +1371,8 @@ class NilaiController extends Controller
 
     }
 
+
+
     /*
 
     |--------------------------------------------------------------------------
@@ -1125,6 +1382,8 @@ class NilaiController extends Controller
     |--------------------------------------------------------------------------
 
     */
+
+
 
     private function headerPdf(
 
@@ -1138,17 +1397,23 @@ class NilaiController extends Controller
 
         $logo = public_path('images/logo-ipb.png');
 
+
+
         if (file_exists($logo)) {
 
             $pdf->Image($logo, 12, 10, 22);
 
         }
 
+
+
         $pdf->SetFont('Arial', 'B', 18);
 
         $pdf->SetTextColor(76, 61, 170);
 
         $pdf->Cell(0, 10, 'STUDENT TRACK', 0, 1, 'C');
+
+
 
         $pdf->SetFont('Arial', 'B', 14);
 
@@ -1170,6 +1435,8 @@ class NilaiController extends Controller
 
         );
 
+
+
         $pdf->SetFont('Arial', '', 10);
 
         $pdf->SetTextColor(100, 100, 100);
@@ -1190,17 +1457,25 @@ class NilaiController extends Controller
 
         );
 
+
+
         $pdf->Ln(5);
+
+
 
         $pdf->SetDrawColor(100, 90, 190);
 
         $pdf->Line(10, $pdf->GetY(), 287, $pdf->GetY());
+
+
 
         $pdf->Ln(5);
 
         $pdf->SetTextColor(40, 40, 40);
 
     }
+
+
 
     /*
 
@@ -1211,6 +1486,8 @@ class NilaiController extends Controller
     |--------------------------------------------------------------------------
 
     */
+
+
 
     private function tabelNilai(FPDF $pdf, array $data): void
 
@@ -1225,6 +1502,8 @@ class NilaiController extends Controller
             17, 13, 13, 22
 
         ];
+
+
 
         $header = [
 
@@ -1258,11 +1537,15 @@ class NilaiController extends Controller
 
         ];
 
+
+
         $gambarHeader = function () use ($pdf, $header, $lebar) {
 
             $pdf->SetFont('Arial', 'B', 7);
 
             $pdf->SetFillColor(235, 232, 250);
+
+
 
             foreach ($header as $i => $judul) {
 
@@ -1286,19 +1569,27 @@ class NilaiController extends Controller
 
             }
 
+
+
             $pdf->Ln();
 
             $pdf->SetFont('Arial', '', 7);
 
         };
 
+
+
         $gambarHeader();
+
+
 
         foreach ($data as $index => $item) {
 
             if ($pdf->GetY() > 175) {
 
                 $pdf->AddPage();
+
+
 
                 $this->headerPdf(
 
@@ -1310,11 +1601,17 @@ class NilaiController extends Controller
 
                 );
 
+
+
                 $gambarHeader();
 
             }
 
+
+
             $komponen = $item['komponen'];
+
+
 
             $baris = [
 
@@ -1326,11 +1623,15 @@ class NilaiController extends Controller
 
                 $item['sks'],
 
+
+
                 $this->formatAngka(
 
                     $komponen['project_akhir']
 
                 ),
+
+
 
                 $this->formatAngka(
 
@@ -1338,11 +1639,15 @@ class NilaiController extends Controller
 
                 ),
 
+
+
                 $this->formatAngka(
 
                     $komponen['uts']
 
                 ),
+
+
 
                 $this->formatAngka(
 
@@ -1350,11 +1655,15 @@ class NilaiController extends Controller
 
                 ),
 
+
+
                 $this->formatAngka(
 
                     $komponen['keaktifan']
 
                 ),
+
+
 
                 $this->formatAngka(
 
@@ -1362,19 +1671,27 @@ class NilaiController extends Controller
 
                 ),
 
+
+
                 $item['nilai_akhir'] !== null
 
                     ? number_format($item['nilai_akhir'], 2)
 
                     : '-',
 
+
+
                 $item['huruf'],
+
+
 
                 $item['bobot'] !== null
 
                     ? number_format($item['bobot'], 2)
 
                     : '-',
+
+
 
                 $item['lengkap']
 
@@ -1383,6 +1700,8 @@ class NilaiController extends Controller
                     : 'Belum lengkap',
 
             ];
+
+
 
             foreach ($baris as $i => $nilai) {
 
@@ -1404,11 +1723,15 @@ class NilaiController extends Controller
 
             }
 
+
+
             $pdf->Ln();
 
         }
 
     }
+
+
 
     /*
 
@@ -1419,6 +1742,8 @@ class NilaiController extends Controller
     |--------------------------------------------------------------------------
 
     */
+
+
 
     private function formatAngka(?float $nilai): string
 
@@ -1432,6 +1757,8 @@ class NilaiController extends Controller
 
     }
 
+
+
     /*
 
     |--------------------------------------------------------------------------
@@ -1442,27 +1769,25 @@ class NilaiController extends Controller
 
     */
 
+
+
     private function pdfText(string $text): string
 
     {
 
         // FPDF core fonts use a single-byte encoding. Avoid iconv TRANSLIT
-
         // because some hosting environments disable that conversion mode.
-
         if (function_exists('mb_convert_encoding')) {
-
             return mb_convert_encoding($text, 'ISO-8859-1', 'UTF-8');
-
         }
 
         // Fallback when mbstring is unavailable.
-
         $converted = @iconv('UTF-8', 'ISO-8859-1//IGNORE', $text);
-
         return $converted !== false ? $converted : '';
 
     }
+
+
 
     /*
 
@@ -1474,11 +1799,15 @@ class NilaiController extends Controller
 
     */
 
+
+
     private function kirimPdf(FPDF $pdf, string $filename)
 
     {
 
         $content = $pdf->Output('S');
+
+
 
         return response($content, 200, [
 
